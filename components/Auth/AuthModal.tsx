@@ -13,7 +13,7 @@ export default function AuthModal({ onAuthSuccess }: AuthModalProps) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const supabase = new SupabaseService()
+  const [supabase] = useState(() => new SupabaseService())
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,23 +35,23 @@ export default function AuthModal({ onAuthSuccess }: AuthModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg max-w-md w-full p-8">
-        <h2 className="text-3xl font-bold mb-6 text-center text-white">Welcome to Whisper</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
+      <div className="bg-black border border-white max-w-md w-full p-8">
+        <h2 className="text-3xl font-light mb-8 text-center text-white tracking-tight">Welcome to Whisper</h2>
 
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setIsLogin(true)}
-            className={`flex-1 px-4 py-2 rounded transition-colors ${
-              isLogin ? 'bg-blue-600' : 'bg-gray-700'
+            className={`flex-1 px-4 py-2 transition-colors font-medium ${
+              isLogin ? 'bg-white text-black' : 'bg-black text-white border border-white'
             }`}
           >
             Login
           </button>
           <button
             onClick={() => setIsLogin(false)}
-            className={`flex-1 px-4 py-2 rounded transition-colors ${
-              !isLogin ? 'bg-blue-600' : 'bg-gray-700'
+            className={`flex-1 px-4 py-2 transition-colors font-medium ${
+              !isLogin ? 'bg-white text-black' : 'bg-black text-white border border-white'
             }`}
           >
             Sign Up
@@ -68,7 +68,7 @@ export default function AuthModal({ onAuthSuccess }: AuthModalProps) {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="w-full px-4 py-2 bg-black text-white border border-white focus:border-white focus:outline-none"
               required
             />
           </div>
@@ -82,13 +82,13 @@ export default function AuthModal({ onAuthSuccess }: AuthModalProps) {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              className="w-full px-4 py-2 bg-black text-white border border-white focus:border-white focus:outline-none"
               required
             />
           </div>
 
           {error && (
-            <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-500 px-4 py-2 rounded">
+            <div className="bg-black border border-red-500 text-red-500 px-4 py-2">
               {error}
             </div>
           )}
@@ -96,7 +96,7 @@ export default function AuthModal({ onAuthSuccess }: AuthModalProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded font-semibold transition-colors disabled:opacity-50"
+            className="w-full bg-white text-black hover:bg-gray-200 px-6 py-2 font-medium transition-colors disabled:opacity-50"
           >
             {loading ? 'Processing...' : isLogin ? 'Login' : 'Sign Up'}
           </button>

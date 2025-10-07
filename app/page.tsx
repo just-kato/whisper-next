@@ -3,23 +3,30 @@
 import { useState, useEffect } from 'react'
 import AuthModal from '@/components/Auth/AuthModal'
 import TranscriptionForm from '@/components/Transcription/TranscriptionForm'
-import TranscriptionResult, { TranscriptionResult as TResult } from '@/components/Transcription/TranscriptionResult'
+import TranscriptionResult from '@/components/Transcription/TranscriptionResult'
 import Dashboard from '@/components/Dashboard/Dashboard'
 import { SupabaseService } from '@/lib/supabase'
+import type { TranscriptionResult as TResult } from '@/components/Transcription/TranscriptionForm'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [transcriptionResult, setTranscriptionResult] = useState<TResult | null>(null)
   const [currentModel, setCurrentModel] = useState('base')
   const [currentFileName, setCurrentFileName] = useState<string>()
+  const [currentYoutubeUrl, setCurrentYoutubeUrl] = useState<string>()
   const [refreshDashboard, setRefreshDashboard] = useState(0)
-  const supabase = new SupabaseService()
+  const [supabase, setSupabase] = useState<SupabaseService | null>(null)
 
   useEffect(() => {
-    checkUser()
+    setMounted(true)
+    const service = new SupabaseService()
+    setSupabase(service)
 
-    const { data: authListener } = supabase.onAuthStateChange((user) => {
+    checkUser(service)
+
+    const { data: authListener } = service.onAuthStateChange((user) => {
       setUser(user)
     })
 
@@ -28,9 +35,9 @@ export default function Home() {
     }
   }, [])
 
-  const checkUser = async () => {
+  const checkUser = async (service: SupabaseService) => {
     try {
-      const currentUser = await supabase.getCurrentUser()
+      const currentUser = await service.getCurrentUser()
       setUser(currentUser)
     } catch (err) {
       console.log('No user logged in')
@@ -40,11 +47,14 @@ export default function Home() {
   }
 
   const handleAuthSuccess = () => {
-    checkUser()
+    if (supabase) {
+      checkUser(supabase)
+    }
   }
 
   const handleTranscriptionComplete = (result: TResult) => {
     setTranscriptionResult(result)
+    setCurrentYoutubeUrl(result.youtubeUrl)
   }
 
   const handleSaveComplete = () => {
@@ -53,6 +63,7 @@ export default function Home() {
   }
 
   const handleLogout = async () => {
+    if (!supabase) return
     try {
       await supabase.signOut()
       setUser(null)
@@ -62,9 +73,9 @@ export default function Home() {
     }
   }
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <p className="text-white text-xl">Loading...</p>
       </div>
     )
@@ -75,13 +86,13 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
+    <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">Whisper Transcription</h1>
+        <header className="flex justify-between items-center mb-8 border-b border-white pb-6">
+          <h1 className="text-4xl font-light tracking-tight">Whisper Transcription</h1>
           <button
             onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded font-semibold transition-colors"
+            className="bg-white text-black hover:bg-gray-200 px-6 py-2 font-medium transition-colors"
           >
             Logout
           </button>
@@ -96,6 +107,7 @@ export default function Home() {
               language={transcriptionResult.language}
               model={currentModel}
               fileName={currentFileName}
+              youtubeUrl={currentYoutubeUrl}
               onSaveComplete={handleSaveComplete}
             />
           )}

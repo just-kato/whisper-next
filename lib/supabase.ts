@@ -1,10 +1,12 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseClient } from './supabase-client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  if (typeof window === 'undefined') {
+    // Return a dummy client for SSR
+    return null as any
+  }
+  return getSupabaseClient()
 }
 
 export interface Transcription {
@@ -23,7 +25,11 @@ export interface Transcription {
 }
 
 export class SupabaseService {
-  private supabase = createClient()
+  private supabase: SupabaseClient
+
+  constructor() {
+    this.supabase = createClient()
+  }
 
   async signUp(email: string, password: string) {
     const { data, error } = await this.supabase.auth.signUp({
@@ -49,8 +55,18 @@ export class SupabaseService {
   }
 
   async getCurrentUser() {
-    const { data: { user } } = await this.supabase.auth.getUser()
-    return user
+    try {
+      const { data: { user }, error } = await this.supabase.auth.getUser()
+      if (error) {
+        // Clear invalid session
+        await this.supabase.auth.signOut()
+        return null
+      }
+      return user
+    } catch (err) {
+      console.error('Error getting current user:', err)
+      return null
+    }
   }
 
   onAuthStateChange(callback: (user: any) => void) {
@@ -84,6 +100,15 @@ export class SupabaseService {
     const { error } = await this.supabase
       .from('transcriptions')
       .delete()
+      .eq('id', id)
+
+    if (error) throw error
+  }
+
+  async updateTranscriptionTags(id: string, tags: string[] | null) {
+    const { error } = await this.supabase
+      .from('transcriptions')
+      .update({ tags })
       .eq('id', id)
 
     if (error) throw error

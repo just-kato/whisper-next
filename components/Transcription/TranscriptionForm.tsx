@@ -10,22 +10,25 @@ export interface TranscriptionResult {
   text: string
   language: string
   segments: any[]
+  youtubeUrl?: string
 }
 
 export default function TranscriptionForm({ onTranscriptionComplete }: TranscriptionFormProps) {
-  const [model, setModel] = useState('base')
+  const [model, setModel] = useState('auto')
   const [language, setLanguage] = useState('auto')
   const [task, setTask] = useState('transcribe')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [youtubeLoaded, setYoutubeLoaded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
       setYoutubeUrl('')
+      setYoutubeLoaded(false)
     }
   }
 
@@ -34,6 +37,7 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setFile(e.dataTransfer.files[0])
       setYoutubeUrl('')
+      setYoutubeLoaded(false)
     }
   }
 
@@ -47,6 +51,8 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
+      setYoutubeLoaded(true)
+      setError('')
     }
   }
 
@@ -71,7 +77,8 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
       formData.append('language', language)
       formData.append('task', task)
 
-      const response = await fetch('/api/transcribe', {
+      // Call Flask server directly to avoid Next.js timeout issues
+      const response = await fetch('http://127.0.0.1:5001/transcribe', {
         method: 'POST',
         body: formData,
       })
@@ -82,7 +89,10 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
       }
 
       const result = await response.json()
-      onTranscriptionComplete(result)
+      onTranscriptionComplete({
+        ...result,
+        youtubeUrl: youtubeUrl.trim() || undefined
+      })
     } catch (err: any) {
       setError(err.message || 'Failed to transcribe')
     } finally {
@@ -91,18 +101,18 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-bold mb-6 text-white">Upload Audio or Video</h2>
+    <div className="bg-black border border-white p-6">
+      <h2 className="text-2xl font-light mb-6 text-white tracking-tight">Upload Audio or Video</h2>
 
       {/* File Drop Zone */}
       <div
         onClick={() => fileInputRef.current?.click()}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        className="border-2 border-dashed border-gray-600 rounded-lg p-12 text-center mb-6 cursor-pointer hover:border-blue-500 transition-colors"
+        className="border-2 border-dashed border-white p-12 text-center mb-6 cursor-pointer hover:border-gray-400 transition-colors"
       >
         <svg
-          className="mx-auto h-12 w-12 text-gray-500 mb-4"
+          className="mx-auto h-12 w-12 text-white mb-4"
           stroke="currentColor"
           fill="none"
           viewBox="0 0 48 48"
@@ -114,10 +124,10 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
             strokeLinejoin="round"
           />
         </svg>
-        <p className="text-gray-400 mb-2">
+        <p className="text-white mb-2 font-medium">
           {file ? file.name : 'Click to upload or drag and drop'}
         </p>
-        <p className="text-sm text-gray-500">MP3, WAV, MP4, or other audio/video formats</p>
+        <p className="text-sm text-gray-400">MP3, WAV, MP4, or other audio/video formats</p>
         <input
           ref={fileInputRef}
           type="file"
@@ -136,18 +146,26 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
           <input
             type="text"
             value={youtubeUrl}
-            onChange={(e) => setYoutubeUrl(e.target.value)}
+            onChange={(e) => {
+              setYoutubeUrl(e.target.value)
+              setYoutubeLoaded(false)
+            }}
             placeholder="https://www.youtube.com/watch?v=..."
-            className="flex-1 px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+            className="flex-1 px-4 py-2 bg-black text-white border border-white focus:border-white focus:outline-none"
           />
           <button
             onClick={handleYoutubeLoad}
             disabled={!youtubeUrl.trim()}
-            className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded transition-colors disabled:opacity-50"
+            className="bg-white text-black hover:bg-gray-200 px-4 py-2 font-medium transition-colors disabled:opacity-50"
           >
             Load Video
           </button>
         </div>
+        {youtubeLoaded && (
+          <div className="mt-2 px-4 py-2 bg-black border border-white text-white text-sm">
+            ✓ YouTube URL loaded. Ready to transcribe.
+          </div>
+        )}
       </div>
 
       {/* Settings */}
@@ -157,8 +175,9 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+            className="w-full px-4 py-2 bg-black text-white border border-white focus:border-white focus:outline-none"
           >
+            <option value="auto">Auto (recommended)</option>
             <option value="tiny">Tiny (fastest)</option>
             <option value="base">Base</option>
             <option value="small">Small</option>
@@ -172,7 +191,7 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+            className="w-full px-4 py-2 bg-black text-white border border-white focus:border-white focus:outline-none"
           >
             <option value="auto">Auto-detect</option>
             <option value="en">English</option>
@@ -191,7 +210,7 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
           <select
             value={task}
             onChange={(e) => setTask(e.target.value)}
-            className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+            className="w-full px-4 py-2 bg-black text-white border border-white focus:border-white focus:outline-none"
           >
             <option value="transcribe">Transcribe</option>
             <option value="translate">Translate to English</option>
@@ -201,8 +220,21 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
 
       {/* Error */}
       {error && (
-        <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 px-4 py-2 rounded">
+        <div className="mb-4 bg-black border border-red-500 text-red-500 px-4 py-2">
           {error}
+        </div>
+      )}
+
+      {/* Loading Progress */}
+      {loading && (
+        <div className="mb-4 bg-black border border-white p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white font-medium">Transcribing audio...</span>
+            <span className="text-gray-400 text-sm">This may take a few minutes</span>
+          </div>
+          <div className="w-full bg-gray-900 h-2 overflow-hidden">
+            <div className="h-full bg-white animate-pulse" style={{ width: '100%' }}></div>
+          </div>
         </div>
       )}
 
@@ -210,7 +242,7 @@ export default function TranscriptionForm({ onTranscriptionComplete }: Transcrip
       <button
         onClick={handleTranscribe}
         disabled={loading || (!file && !youtubeUrl.trim())}
-        className="w-full bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-semibold transition-colors disabled:opacity-50"
+        className="w-full bg-white text-black hover:bg-gray-200 px-6 py-3 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Transcribing...' : 'Transcribe'}
       </button>

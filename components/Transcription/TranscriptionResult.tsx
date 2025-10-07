@@ -8,6 +8,7 @@ interface TranscriptionResultProps {
   language: string
   model: string
   fileName?: string
+  youtubeUrl?: string
   onSaveComplete: () => void
 }
 
@@ -16,13 +17,14 @@ export default function TranscriptionResult({
   language,
   model,
   fileName,
+  youtubeUrl,
   onSaveComplete,
 }: TranscriptionResultProps) {
   const [name, setName] = useState('')
   const [tags, setTags] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const supabase = new SupabaseService()
+  const [supabase] = useState(() => new SupabaseService())
 
   const formatText = (text: string): string => {
     // Remove extra whitespace
@@ -75,7 +77,7 @@ export default function TranscriptionResult({
         formatted_text: formatText(text),
         language,
         model_used: model,
-        file_name: fileName || null,
+        file_name: youtubeUrl || fileName || null,
         duration_seconds: null,
         tags: parsedTags.length > 0 ? parsedTags : null,
         user_id: user?.id || null,
@@ -103,16 +105,26 @@ export default function TranscriptionResult({
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-bold mb-6 text-white">Transcription Result</h2>
+    <div className="bg-black border border-white p-6">
+      <h2 className="text-2xl font-light mb-6 text-white tracking-tight">Transcription Result</h2>
 
-      <div className="mb-4">
+      <div className="mb-4 space-y-2">
         <p className="text-sm text-gray-400">
-          Language: <span className="text-white">{language}</span>
+          Language: <span className="text-white font-medium">{language}</span>
         </p>
+        {youtubeUrl && (
+          <a
+            href={youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-white hover:text-gray-400 underline inline-block"
+          >
+            Watch original video →
+          </a>
+        )}
       </div>
 
-      <div className="bg-gray-900 rounded p-4 mb-6 max-h-96 overflow-y-auto">
+      <div className="bg-black border border-white p-4 mb-6 max-h-96 overflow-y-auto">
         <p className="text-white whitespace-pre-wrap">{text}</p>
       </div>
 
@@ -123,7 +135,7 @@ export default function TranscriptionResult({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter a name..."
-          className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+          className="w-full px-4 py-2 bg-black text-white border border-white focus:border-white focus:outline-none"
         />
       </div>
 
@@ -136,12 +148,12 @@ export default function TranscriptionResult({
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="e.g., meeting, work, important"
-          className="w-full px-4 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+          className="w-full px-4 py-2 bg-black text-white border border-white focus:border-white focus:outline-none"
         />
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-500 bg-opacity-20 border border-red-500 text-red-500 px-4 py-2 rounded">
+        <div className="mb-4 bg-black border border-red-500 text-red-500 px-4 py-2">
           {error}
         </div>
       )}
@@ -150,13 +162,13 @@ export default function TranscriptionResult({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 bg-green-600 hover:bg-green-700 px-6 py-3 rounded font-semibold transition-colors disabled:opacity-50"
+          className="flex-1 bg-white text-black hover:bg-gray-200 px-6 py-3 font-medium transition-colors disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save to Dashboard'}
         </button>
         <button
           onClick={handleDownload}
-          className="bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded font-semibold transition-colors"
+          className="bg-black text-white border border-white hover:bg-gray-900 px-6 py-3 font-medium transition-colors"
         >
           Download
         </button>
