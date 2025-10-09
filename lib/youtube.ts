@@ -153,8 +153,8 @@ class YouTubeService {
         channel_id: channelId,
         url: `https://www.youtube.com/channel/${channelId}`,
         title: snippet.title!,
-        description: snippet.description,
-        thumbnail_url: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url,
+        description: snippet.description || undefined,
+        thumbnail_url: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || undefined,
         subscriber_count: parseInt(statistics.subscriberCount || '0'),
         video_count: parseInt(statistics.videoCount || '0'),
       }
@@ -232,9 +232,9 @@ class YouTubeService {
           video_id: video.id!,
           channel_id: channelId,
           title: snippet.title!,
-          description: snippet.description,
+          description: snippet.description || undefined,
           published_at: snippet.publishedAt!,
-          thumbnail_url: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url,
+          thumbnail_url: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || undefined,
           duration: this.parseDuration(contentDetails.duration!),
           view_count: parseInt(statistics.viewCount || '0'),
           like_count: statistics.likeCount ? parseInt(statistics.likeCount) : null,
@@ -313,7 +313,7 @@ class YouTubeService {
 
       // Fetch all videos from playlist (only basic info)
       while (true) {
-        const playlistResponse = await this.youtube.playlistItems.list({
+        const playlistResponse: any = await this.youtube.playlistItems.list({
           part: ['snippet'],
           playlistId: uploadsPlaylistId,
           maxResults: 50,
@@ -368,9 +368,9 @@ class YouTubeService {
           video_id: video.id!,
           channel_id: snippet.channelId!,
           title: snippet.title!,
-          description: snippet.description,
+          description: snippet.description || undefined,
           published_at: snippet.publishedAt!,
-          thumbnail_url: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url,
+          thumbnail_url: snippet.thumbnails?.high?.url || snippet.thumbnails?.default?.url || undefined,
           duration: this.parseDuration(contentDetails.duration!),
           view_count: parseInt(statistics.viewCount || '0'),
           like_count: statistics.likeCount ? parseInt(statistics.likeCount) : null,
