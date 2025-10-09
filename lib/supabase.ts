@@ -1,5 +1,6 @@
 import { getSupabaseClient } from './supabase-client'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { YoutubeChannel, YoutubeVideo } from './youtube'
 
 export function createClient() {
   if (typeof window === 'undefined') {
@@ -110,6 +111,117 @@ export class SupabaseService {
       .from('transcriptions')
       .update({ tags })
       .eq('id', id)
+
+    if (error) throw error
+  }
+
+  // YouTube Channel methods
+  async saveChannel(channel: Omit<YoutubeChannel, 'id' | 'created_at' | 'updated_at'>) {
+    const { data, error } = await this.supabase
+      .from('youtube_channels')
+      .upsert([channel], { onConflict: 'channel_id' })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as YoutubeChannel
+  }
+
+  async getChannels() {
+    const { data, error } = await this.supabase
+      .from('youtube_channels')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data as YoutubeChannel[]
+  }
+
+  async getChannelById(id: string) {
+    const { data, error } = await this.supabase
+      .from('youtube_channels')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data as YoutubeChannel
+  }
+
+  async getChannelByChannelId(channelId: string) {
+    const { data, error } = await this.supabase
+      .from('youtube_channels')
+      .select('*')
+      .eq('channel_id', channelId)
+      .single()
+
+    if (error) return null
+    return data as YoutubeChannel
+  }
+
+  async deleteChannel(id: string) {
+    const { error } = await this.supabase
+      .from('youtube_channels')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+  }
+
+  // YouTube Video methods
+  async saveVideos(videos: Omit<YoutubeVideo, 'id' | 'created_at' | 'updated_at'>[]) {
+    const { data, error } = await this.supabase
+      .from('youtube_videos')
+      .upsert(videos, { onConflict: 'video_id' })
+      .select()
+
+    if (error) throw error
+    return data as YoutubeVideo[]
+  }
+
+  async getVideosByChannelId(channelId: string, limit?: number, offset: number = 0) {
+    let query = this.supabase
+      .from('youtube_videos')
+      .select('*')
+      .eq('channel_id', channelId)
+      .order('published_at', { ascending: false })
+
+    if (limit) {
+      query = query.range(offset, offset + limit - 1)
+    }
+
+    const { data, error} = await query
+
+    if (error) throw error
+    return data as YoutubeVideo[]
+  }
+
+  async getAllVideosByChannelId(channelId: string) {
+    const { data, error } = await this.supabase
+      .from('youtube_videos')
+      .select('*')
+      .eq('channel_id', channelId)
+      .order('published_at', { ascending: false })
+
+    if (error) throw error
+    return data as YoutubeVideo[]
+  }
+
+  async getVideoCount(channelId: string) {
+    const { count, error } = await this.supabase
+      .from('youtube_videos')
+      .select('*', { count: 'exact', head: true })
+      .eq('channel_id', channelId)
+
+    if (error) throw error
+    return count || 0
+  }
+
+  async deleteVideosByChannelId(channelId: string) {
+    const { error } = await this.supabase
+      .from('youtube_videos')
+      .delete()
+      .eq('channel_id', channelId)
 
     if (error) throw error
   }

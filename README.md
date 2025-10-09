@@ -1,4 +1,4 @@
-# Whisper Transcription App
+# Youtube Researcher 3000 App
 
 A Next.js application for transcribing audio and video files using OpenAI's Whisper model. Features include user authentication, YouTube video support, tag management, and transcription history.
 
