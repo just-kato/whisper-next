@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { SupabaseService } from '@/lib/supabase'
+import ForgotPassword from './ForgotPassword'
 
 interface AuthModalProps {
   onAuthSuccess: () => void
@@ -9,6 +10,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ onAuthSuccess }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -32,6 +34,10 @@ export default function AuthModal({ onAuthSuccess }: AuthModalProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (showForgotPassword) {
+    return <ForgotPassword onBack={() => setShowForgotPassword(false)} />
   }
 
   return (
@@ -100,6 +106,18 @@ export default function AuthModal({ onAuthSuccess }: AuthModalProps) {
           >
             {loading ? 'Processing...' : isLogin ? 'Login' : 'Sign Up'}
           </button>
+
+          {isLogin && (
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-gray-400 hover:text-white transition-colors text-sm underline"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>

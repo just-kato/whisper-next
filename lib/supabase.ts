@@ -55,6 +55,20 @@ export class SupabaseService {
     if (error) throw error
   }
 
+  async resetPassword(email: string) {
+    const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (error) throw error
+  }
+
+  async updatePassword(password: string) {
+    const { error } = await this.supabase.auth.updateUser({
+      password: password
+    })
+    if (error) throw error
+  }
+
   async getCurrentUser() {
     try {
       const { data: { user }, error } = await this.supabase.auth.getUser()
