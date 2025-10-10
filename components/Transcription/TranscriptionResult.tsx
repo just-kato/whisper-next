@@ -27,32 +27,32 @@ export default function TranscriptionResult({
   const [supabase] = useState(() => new SupabaseService())
 
   const formatText = (text: string): string => {
-    // Remove extra whitespace
-    let formatted = text.replace(/\s+/g, ' ').trim()
+    // Remove extra whitespace and normalize
+    let formatted = text.trim()
 
-    // Ensure proper spacing after punctuation
+    // Add proper spacing after punctuation
     formatted = formatted.replace(/([.!?])\s*/g, '$1 ')
 
     // Capitalize first letter of sentences
-    formatted = formatted.replace(/(^|[.!?]\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase())
+    formatted = formatted.replace(/(^|\.\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase())
 
-    // Add paragraph breaks every 3-4 sentences
-    const sentences = formatted.split(/([.!?]\s+)/)
-    let result = ''
-    let sentenceCount = 0
+    // Remove multiple spaces
+    formatted = formatted.replace(/\s+/g, ' ')
 
-    for (let i = 0; i < sentences.length; i++) {
-      result += sentences[i]
-      if (sentences[i].match(/[.!?]\s+$/)) {
-        sentenceCount++
-        if (sentenceCount >= 3 && Math.random() > 0.3) {
-          result += '\n\n'
-          sentenceCount = 0
-        }
+    // Add paragraph breaks for better readability (every 3-4 sentences)
+    const sentences = formatted.match(/[^.!?]+[.!?]+/g) || [formatted]
+    let paragraphs: string[] = []
+    let currentParagraph: string[] = []
+
+    sentences.forEach((sentence, index) => {
+      currentParagraph.push(sentence.trim())
+      if ((index + 1) % 3 === 0 || index === sentences.length - 1) {
+        paragraphs.push(currentParagraph.join(' '))
+        currentParagraph = []
       }
-    }
+    })
 
-    return result.trim()
+    return paragraphs.join('\n\n')
   }
 
   const handleSave = async () => {
